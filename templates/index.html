@@ -1,273 +1,391 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>তাহের মোল্লা ডাউনলোডার</title>
+    <title>Madiha DOWNLOADER</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Poppins:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Hind+Siliguri:wght@400;600;700&display=swap');
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Poppins', 'Hind Siliguri', sans-serif;
-            height: 100vh;
-            overflow: hidden;
-            background: #000;
+            font-family: 'Roboto', 'Hind Siliguri', sans-serif;
+            min-height: 100vh;
             display: flex;
-            justify_content: center;
+            justify-content: center;
             align-items: center;
-            color: white;
+            background: linear-gradient(135deg, #f5f9ff 0%, #e8f4fd 50%, #deeeff 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #333;
         }
 
-        /* ব্যাকগ্রাউন্ড এনিমেশন এবং Flask ইমেজ লোডিং */
-        .bg-image {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            /* এখানে Flask এর url_for ব্যবহার করা হয়েছে */
-            background: url("{{ url_for('static', filename='web_i.jpg') }}") no-repeat center center/cover;
-            opacity: 0;
-            transform: translateY(100px);
-            animation: bgSlideUp 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-            z-index: -1;
-            filter: brightness(0.4);
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .container {
             text-align: center;
             width: 90%;
-            max-width: 500px;
+            max-width: 550px;
+            margin: 0 auto;
             padding: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 30px;
+            border: 1px solid rgba(220, 240, 255, 0.9);
+            box-shadow: 0 20px 60px rgba(100, 180, 240, 0.12);
+            transition: transform 0.3s;
         }
 
-        /* টেক্সট এনিমেশন */
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
         .title {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 700;
-            color: #ffcc00;
+            font-family: 'Roboto', sans-serif;
+            /* Changed colors for a slight Insta feel */
+            background: linear-gradient(45deg, #8a3ab9, #e95950, #fccc63);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 5px;
-            opacity: 0;
-            animation: fadeSlideUp 0.8s 0.5s forwards;
-            text-transform: uppercase;
+            animation: slideDown 0.8s ease-out;
         }
 
         .subtitle {
             font-size: 1rem;
-            color: #ddd;
-            margin-bottom: 20px;
+            font-family: 'Roboto', 'Hind Siliguri', sans-serif;
+            color: #6d8a9d;
+            margin-bottom: 25px;
             font-style: italic;
-            opacity: 0;
-            animation: fadeSlideUp 0.8s 0.7s forwards;
+            animation: slideDown 0.8s ease-out 0.2s backwards;
         }
 
-        .instruction {
-            font-size: 0.9rem;
-            color: #aaa;
-            margin-bottom: 10px;
-            font-family: 'Poppins', sans-serif;
-            opacity: 0;
-            animation: fadeSlideUp 0.8s 0.9s forwards;
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+            animation: popIn 0.8s ease-out 0.4s backwards;
         }
 
         input[type="text"] {
             width: 100%;
-            padding: 15px;
-            border-radius: 10px;
-            border: none;
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
+            padding: 18px 25px;
+            border-radius: 50px;
+            border: 2px solid #e3f2fd;
+            background: #fff;
+            color: #1565c0;
             font-size: 1rem;
-            margin-bottom: 20px;
+            font-family: 'Roboto', 'Hind Siliguri', sans-serif;
             outline: none;
-            transition: 0.3s;
-            opacity: 0;
-            animation: fadeSlideUp 0.8s 1.1s forwards;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
 
         input[type="text"]:focus {
-            background: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
+            border-color: #e95950; /* Insta color change */
+            box-shadow: 0 8px 25px rgba(233, 89, 80, 0.2);
+            transform: scale(1.02);
         }
 
         .btn-main {
-            background: linear-gradient(45deg, #ff0055, #ffcc00);
+            /* Changed gradient for a slight Insta feel */
+            background: linear-gradient(45deg, #8a3ab9, #e95950);
             border: none;
-            padding: 12px 30px;
+            padding: 15px 40px;
             color: white;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
+            font-family: 'Roboto', sans-serif;
             border-radius: 50px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            opacity: 0;
-            animation: fadeSlideUp 0.8s 1.3s forwards;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(138, 58, 185, 0.25);
+            position: relative;
+            overflow: hidden;
+            animation: popIn 0.8s ease-out 0.6s backwards;
         }
 
         .btn-main:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(255, 0, 85, 0.4);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(138, 58, 185, 0.35);
         }
 
-        /* রেজাল্ট সেকশন */
+        .btn-main:active {
+            transform: scale(0.95);
+        }
+
         #result-area {
             margin-top: 30px;
             display: none;
             text-align: left;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            padding-top: 20px;
-            animation: fadeIn 0.5s ease;
+            animation: fadeIn 0.6s ease;
         }
 
-        .video-info {
+        .video-card {
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e3f2fd;
         }
 
-        .video-info img {
+        .video-card img {
             width: 80px;
-            border-radius: 8px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 15px;
             margin-right: 15px;
         }
 
         .quality-list {
             list-style: none;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 5px;
         }
+
+        .quality-list::-webkit-scrollbar { width: 6px; }
+        .quality-list::-webkit-scrollbar-thumb { background: #bbdefb; border-radius: 10px; }
 
         .quality-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0,0,0,0.3);
-            padding: 10px 15px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            transition: 0.3s;
+            background: #f5faff;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border-radius: 50px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            animation: slideInRight 0.5s ease forwards;
+            opacity: 0;
+            transform: translateX(20px);
         }
 
         .quality-item:hover {
-            background: rgba(255,255,255,0.1);
+            background: #e3f2fd;
+            border-color: #e95950; /* Insta color change */
+            transform: translateX(5px);
         }
 
-        .dwn-btn-sm {
-            background: #00c853;
+        .btn-process {
+            background: #e95950; /* Insta color change */
             color: white;
             border: none;
-            padding: 5px 15px;
-            border-radius: 5px;
+            padding: 8px 20px;
+            border-radius: 30px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: 'Roboto', sans-serif;
+            transition: 0.3s;
         }
 
-        /* লোডিং এবং প্রোগ্রেস বার */
-        .loader {
+        .btn-process:hover {
+            background: #d64a42;
+            box-shadow: 0 4px 10px rgba(233, 89, 80, 0.3);
+        }
+
+        .process-area {
             display: none;
-            margin: 20px auto;
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            text-align: center;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .loader {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #ffcc00;
+            border-top: 4px solid #e95950; /* Insta color change */
             border-radius: 50%;
             width: 30px;
             height: 30px;
             animation: spin 1s linear infinite;
+            margin: 10px auto;
         }
 
-        .progress-container {
-            display: none;
-            margin-top: 15px;
-        }
-        .progress-text {
-            font-size: 0.8rem;
-            margin-bottom: 5px;
-            color: #ffcc00;
-        }
         .progress-bar {
             width: 100%;
-            height: 6px;
-            background: #333;
-            border-radius: 3px;
-            overflow: hidden;
+            height: 35px;
+            background: #e8f4fd;
+            border-radius: 15px;
+            overflow: visible;
+            margin: 15px 0;
+            position: relative;
         }
+
         .progress-fill {
             height: 100%;
             width: 0%;
-            background: #00e676;
-            transition: width 0.4s;
+            background: linear-gradient(90deg, #8a3ab9, #e95950); /* Insta color change */
+            border-radius: 15px;
+            transition: width 0.5s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .delete-note {
-            font-size: 0.7rem;
-            color: #ff5252;
-            margin-top: 5px;
-            display: none;
+        
+        .progress-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.75rem;
+            font-weight: 600;
+            font-family: 'Roboto', sans-serif;
+            color: #1565c0;
+            z-index: 2;
+            white-space: nowrap;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
         }
 
-        /* Keyframes */
-        @keyframes bgSlideUp {
-            to { opacity: 1; transform: translateY(0); }
+        .btn-final-download {
+            display: none;
+            background: linear-gradient(45deg, #43a047, #66bb6a);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-family: 'Roboto', sans-serif;
+            margin-top: 15px;
+            box-shadow: 0 10px 20px rgba(67, 160, 71, 0.3);
+            animation: popIn 0.5s ease;
         }
-        @keyframes fadeSlideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        
+        .btn-final-download:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 25px rgba(67, 160, 71, 0.4);
         }
+
+        .toast-notification {
+            position: fixed;
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #e53935, #ef5350);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(229, 57, 53, 0.4);
+            border: 2px solid #c62828;
+            border-left: 5px solid #b71c1c;
+            font-family: 'Roboto', 'Hind Siliguri', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            z-index: 9999;
+            transition: bottom 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            max-width: 90%;
+            width: auto;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        .toast-notification.show {
+            bottom: 30px;
+        }
+
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
 
     </style>
 </head>
 <body>
 
-    <div class="bg-image"></div>
-
     <div class="container">
-        <div class="title">তাহের মোল্লা (ছত্তার বাড়ি) DOWNLOADER</div>
-        <div class="subtitle">পাশে থাকলে পাশে পাবেন</div>
+        <div class="title">Madiha DOWNLOADER</div>
+        <div class="subtitle">Download **Instagram Reels** in high quality</div>
         
-        <div class="instruction">Please paste your video link below to download</div>
+        <div class="input-group">
+            <input type="text" id="videoLink" placeholder="Paste Instagram Reels link here...">
+        </div>
         
-        <input type="text" id="videoLink" placeholder="Facebook Video Link Here...">
-        <button class="btn-main" onclick="fetchVideoInfo()">Get Video</button>
+        <button class="btn-main" onclick="fetchVideoInfo()">FIND QUALITY</button>
 
-        <div class="loader" id="mainLoader"></div>
+        <div id="mainLoader" class="loader" style="display:none; margin-top:20px;"></div>
 
         <div id="result-area">
-            <div class="video-info">
-                <img id="thumb" src="" alt="Thumb">
+            <div class="video-card">
+                <img id="thumb" src="" alt="Reel Thumb">
                 <div>
-                    <h4 id="vidTitle" style="font-size: 0.9rem; color: #fff;">Video Title</h4>
+                    <h4 id="vidTitle" style="font-size: 1rem; color: #37474f; line-height:1.4; font-family: 'Roboto', 'Hind Siliguri', sans-serif;">Reel Title / Description</h4>
                 </div>
             </div>
             
-            <div id="statusText" style="font-size:0.8rem; color: #aaa; margin-bottom:10px;">Available Qualities:</div>
+            <h5 style="color: #78909c; margin-bottom: 15px; font-weight: 600; font-family: 'Roboto', 'Hind Siliguri', sans-serif;">ডাউনলোড কোয়ালিটি বেছে নিন:</h5>
             <ul class="quality-list" id="qualityList">
                 </ul>
+        </div>
 
-            <div class="progress-container" id="progressArea">
-                <div class="progress-text" id="progressText">Processing on Server...</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="delete-note" id="deleteNote">ফাইলটি ৭ মিনিট পর সার্ভার থেকে স্বয়ংক্রিয়ভাবে মুছে যাবে।</div>
+        <div class="process-area" id="processArea">
+            <h4 id="processStatus" style="color: #42a5f5; font-family: 'Roboto', 'Hind Siliguri', sans-serif;">সার্ভারে প্রসেস হচ্ছে...</h4>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+                <div class="progress-percentage" id="progressPercent">0%</div>
+            </div>
+            <p id="waitText" style="font-size: 0.8rem; color: #90a4ae; font-family: 'Roboto', 'Hind Siliguri', sans-serif;">দয়া করে অপেক্ষা করুন, রিল ভিডিওটি রেডি করা হচ্ছে।</p>
+            
+            <div style="display: flex; justify-content: center;">
+                <a href="#" id="finalDownloadBtn" class="btn-final-download">Save To Download</a>
             </div>
         </div>
+
     </div>
 
+    <div id="toastNotification" class="toast-notification"></div>
+
+    <script>
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            toast.innerText = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return 'Size unknown';
+            const mb = bytes / (1024 * 1024);
+            if (mb < 1024) {
+                return mb.toFixed(1) + ' MB';
+            } else {
+                const gb = mb / 1024;
+                return gb.toFixed(2) + ' GB';
+            }
+        }
+    </script>
     <script>
         async function fetchVideoInfo() {
             const url = document.getElementById('videoLink').value;
             const loader = document.getElementById('mainLoader');
             const resultArea = document.getElementById('result-area');
+            const processArea = document.getElementById('processArea');
             
-            if(!url) return alert("Please enter a link!");
+            if(!url) return showToast("Invalid link!");
 
             loader.style.display = 'block';
             resultArea.style.display = 'none';
+            processArea.style.display = 'none';
 
             try {
-                const response = await fetch('/get-info', {
+                // *** IMPORTANT: You must update the server endpoint (/get-insta-info) to handle Instagram video fetching. ***
+                const response = await fetch('/get-insta-info', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({url: url})
@@ -277,54 +395,95 @@
                 loader.style.display = 'none';
                 
                 if(data.error) {
-                    alert("Error: " + data.error);
+                    showToast(data.error);
                     return;
                 }
-
+                
+                // Assuming the server returns data in the same format (thumbnail, title, formats)
                 document.getElementById('thumb').src = data.thumbnail;
-                document.getElementById('vidTitle').innerText = data.title.substring(0, 50) + '...';
+                document.getElementById('vidTitle').innerText = data.title;
+                
+                window.currentFormats = data.formats;
                 
                 const list = document.getElementById('qualityList');
                 list.innerHTML = '';
 
                 if(data.formats.length === 0){
-                     list.innerHTML = '<li style="color:red">No suitable video format found!</li>';
+                     list.innerHTML = '<li style="color:red; text-align:center;">কোনো রিল ভিডিও পাওয়া যায়নি!</li>';
                 }
 
-                data.formats.forEach(fmt => {
+                data.formats.forEach((fmt, index) => {
                     const li = document.createElement('li');
                     li.className = 'quality-item';
+                    li.style.animationDelay = `${index * 0.1}s`;
+                    
+                    const fileSize = formatFileSize(fmt.filesize);
+                    
                     li.innerHTML = `
-                        <span>${fmt.resolution} <small style="color:#aaa">(${fmt.ext})</small></span>
-                        <button class="dwn-btn-sm" onclick="startDownload('${url}', '${fmt.format_id}')">Download</button>
+                        <div>
+                            <span style="font-weight:600; color:#455a64; font-family: 'Roboto', sans-serif;">${fmt.resolution} <small style="color:#90a4ae">(${fmt.ext})</small></span>
+                            <br><br>
+                            <small style="color:#78909c; font-size: 0.75rem; font-family: 'Roboto', sans-serif;">📦 ${fileSize}</small>
+                        </div>
+                        <button class="btn-process" onclick="prepareDownload('${url}', '${fmt.format_id}')">Ready File</button>
                     `;
                     list.appendChild(li);
                 });
 
                 resultArea.style.display = 'block';
-                document.getElementById('progressArea').style.display = 'none';
 
             } catch (err) {
                 loader.style.display = 'none';
-                alert("Something went wrong! Check console.");
+                showToast("Error! Please Try Again!");
                 console.error(err);
             }
         }
 
-        async function startDownload(url, formatId) {
-            const progressArea = document.getElementById('progressArea');
+        async function prepareDownload(url, formatId) {
+            const processArea = document.getElementById('processArea');
             const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            const deleteNote = document.getElementById('deleteNote');
+            const progressPercent = document.getElementById('progressPercent');
+            const processStatus = document.getElementById('processStatus');
+            const waitText = document.getElementById('waitText');
+            const finalBtn = document.getElementById('finalDownloadBtn');
+            const resultArea = document.getElementById('result-area');
 
-            progressArea.style.display = 'block';
-            progressFill.style.width = '30%';
-            progressFill.style.backgroundColor = "#00e676";
-            progressText.innerText = "Server Downloading & Merging (Please Wait)...";
-            deleteNote.style.display = 'none';
+            const selectedFormat = window.currentFormats.find(f => f.format_id === formatId);
+            const totalSize = selectedFormat ? selectedFormat.filesize : 0;
+
+            resultArea.style.display = 'none';
+            
+            processArea.style.display = 'block';
+            finalBtn.style.display = 'none';
+            waitText.style.display = 'block';
+            
+            function updateProgress(percent) {
+                progressFill.style.width = percent + '%';
+                if (totalSize && totalSize > 0) {
+                    const downloadedMB = ((totalSize * percent / 100) / (1024 * 1024)).toFixed(1);
+                    const totalMB = (totalSize / (1024 * 1024)).toFixed(1);
+                    progressPercent.innerText = `${percent}% (${downloadedMB}/${totalMB} MB)`;
+                } else {
+                    progressPercent.innerText = `${percent}%`;
+                }
+            }
+            
+            updateProgress(10);
+            processStatus.innerText = "Connecting Server...";
+            processStatus.style.color = "#42a5f5";
+
+            setTimeout(() => { 
+                updateProgress(40);
+            }, 500);
+            
+            setTimeout(() => { 
+                updateProgress(60);
+                processStatus.innerText = "Processing & Merging..."; 
+            }, 1500);
 
             try {
-                const response = await fetch('/process-download', {
+                // *** IMPORTANT: You must update the server endpoint (/process-insta-download) to handle Instagram video processing. ***
+                const response = await fetch('/process-insta-download', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({url: url, format_id: formatId})
@@ -333,29 +492,26 @@
                 const data = await response.json();
 
                 if (data.error) {
-                    progressText.innerText = "Failed: " + data.error;
+                    processStatus.innerText = "Failed: " + data.error;
+                    processStatus.style.color = "red";
                     progressFill.style.backgroundColor = "red";
                     return;
                 }
 
-                progressFill.style.width = '100%';
-                progressText.innerText = "Starting Local Download...";
-                deleteNote.style.display = 'block';
+                updateProgress(100);
+                processStatus.innerText = "File Ready to Download!";
+                processStatus.style.color = "#43a047";
+                waitText.style.display = 'none';
 
-                // ডাউনলোড ট্রিগার
-                const downloadLink = document.createElement('a');
-                downloadLink.href = `/download/${data.filename}`;
-                downloadLink.download = data.filename;
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
+                finalBtn.href = `/download/${data.filename}`;
+                finalBtn.download = data.filename;
+                
+                finalBtn.style.display = 'inline-block';
 
             } catch (err) {
-                progressText.innerText = "Network Error!";
+                processStatus.innerText = "Network Error!";
                 console.error(err);
-            }
-        }
+            }<br>        }
     </script>
 </body>
-  </html>
-  
+</html>
