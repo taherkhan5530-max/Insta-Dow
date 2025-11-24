@@ -1,113 +1,117 @@
-import os
-import time
-import threading
-import glob
-from flask import Flask, render_template, request, jsonify, send_file, after_this_request
-import yt_dlp
+# app.py
 
+from flask import Flask, render_template, request, send_file
+import instaloader
+import os
+import shutil
+from urllib.parse import urlparse
+
+# 'Cx Instagram video Downloader' নামে Flask অ্যাপ্লিকেশন তৈরি
 app = Flask(__name__)
 
-# ফোল্ডার কনফিগারেশন
-DOWNLOAD_FOLDER = 'downloads'
-if not os.path.exists(DOWNLOAD_FOLDER):
-    os.makedirs(DOWNLOAD_FOLDER)
+# Instaloader অবজেক্ট ইনিশিয়ালাইজ করুন
+# এটি একটি সাধারণ ডাউনলোডের জন্য, কিন্তু ইনস্টাগ্রাম প্রায়ই এটিকে ব্লক করে দিতে পারে।
+L = instaloader.Instaloader()
 
-# অটোমেটিক ফাইল ডিলেট করার ফাংশন (৭ মিনিট পর)
-def cleanup_old_files():
-    while True:
-        now = time.time()
-        # ৭ মিনিট = ৪২০ সেকেন্ড
-        cutoff = now - 420 
-        files = glob.glob(os.path.join(DOWNLOAD_FOLDER, "*"))
-        for f in files:
-            if os.stat(f).st_mtime < cutoff:
-                try:
-                    os.remove(f)
-                    print(f"Deleted old file: {f}")
-                except Exception as e:
-                    print(f"Error deleting file: {e}")
-        time.sleep(60) # প্রতি ১ মিনিটে চেক করবে
+# ডাউনলোড করার জন্য একটি ডিরেক্টরি সেট করুন
+DOWNLOAD_DIR = 'downloads'
+if not os.path.exists(DOWNLOAD_DIR):
+    os.makedirs(DOWNLOAD_DIR)
 
-# ব্যাকগ্রাউন্ডে ক্লিনআপ থ্রেড রান করা
-cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
-cleanup_thread.start()
-
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
-
-@app.route('/get-info', methods=['POST'])
-def get_info():
-    url = request.json.get('url')
-    if not url:
-        return jsonify({'error': 'No URL provided'}), 400
-
-    try:
-        ydl_opts = {'quiet': True}
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            formats = []
-            
-            # ফরম্যাট ফিল্টার করা (শুধুমাত্র ভিডিও এবং mp4)
-            seen_resolutions = set()
-            for f in info.get('formats', []):
-                # ফেসবুকের জন্য mp4 এবং হাইট চেক করা
-                if f.get('ext') == 'mp4' and f.get('height'):
-                    resolution = f"{f.get('height')}p"
-                    if resolution not in seen_resolutions:
-                        formats.append({
-                            'format_id': f['format_id'],
-                            'resolution': resolution,
-                            'ext': f['ext'],
-                            'note': f.get('format_note', '')
-                        })
-                        seen_resolutions.add(resolution)
-            
-            # রেজোলিউশন অনুযায়ী সর্ট করা (বড় থেকে ছোট)
-            formats.sort(key=lambda x: int(x['resolution'].replace('p', '')), reverse=True)
-
-            return jsonify({
-                'title': info.get('title', 'Video'),
-                'thumbnail': info.get('thumbnail'),
-                'formats': formats
-            })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/process-download', methods=['POST'])
-def process_download():
-    data = request.json
-    url = data.get('url')
-    format_id = data.get('format_id')
+    download_link = None
+    error_message = None
     
-    filename_template = f"{DOWNLOAD_FOLDER}/%(title)s_%(id)s.%(ext)s"
+    # POST রিকোয়েস্ট হ্যান্ডেল করা
+    if request.method == 'POST':
+        post_url = request.form.get('instagram_url')
+        
+        if post_url:
+            # URL থেকে Post Shortcode বের করা
+            try:
+                # URL পার্স করে শর্টকোড বের করা
+                parsed_url = urlparse(post_url)
+                path_parts = parsed_url.path.strip('/').split('/')
+                
+                # যদি URL-এ 'p' (post) বা 'reel' থাকে
+                if 'p' in path_parts or 'reel' in path_parts:
+                    post_shortcode = path_parts[-1] if 'reel' in path_parts else path_parts[1]
+                else:
+                    error_message = "Invalid Instagram Post or Reel URL."
+                    return render_template('index.html', error=error_message, app_name="Cx Instagram video Downloader")
 
-    ydl_opts = {
-        'format': format_id + '+bestaudio/best', # ভিডিও + বেস্ট অডিও
-        'outtmpl': filename_template,
-        'merge_output_format': 'mp4',
-        'quiet': True
-    }
+                # Instaloader ব্যবহার করে পোস্ট ডাউনলোড করা
+                try:
+                    # Instaloader একটি পোস্ট ডাউনলোড করলে, এটি পোস্টের মেটাডেটা সহ বেশ কিছু ফাইল তৈরি করে।
+                    # আমরা শুধুমাত্র ভিডিও ফাইলটি খুঁজব।
+                    
+                    # একটি টেম্পোরারি ডিরেক্টরি তৈরি করুন ডাউনলোড করার জন্য
+                    temp_dir = os.path.join(DOWNLOAD_DIR, post_shortcode)
+                    if not os.path.exists(temp_dir):
+                        os.makedirs(temp_dir)
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
-            # যদি মার্জ হয়, এক্সটেনশন .mp4 হতে পারে
-            if not os.path.exists(filename):
-                 filename = os.path.splitext(filename)[0] + ".mp4"
-            
-            return jsonify({'status': 'ready', 'filename': os.path.basename(filename)})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+                    # Instaloader দিয়ে ডাউনলোড
+                    # L.dirname_pattern সেট করলে সব ফাইল নির্দিষ্ট ডিরেক্টরিতে ডাউনলোড হবে
+                    L.dirname_pattern = temp_dir
+                    
+                    # Instaloader ব্যবহার করে সরাসরি পোস্ট ডাউনলোড করার চেষ্টা
+                    # পোস্টের URL থেকে শর্টকোড বা আইডি পেতে হবে
+                    # Instaloader এর Post.from_shortcode() ফাংশন ব্যবহার করা যেতে পারে।
+                    
+                    post = instaloader.Post.from_shortcode(L.context, post_shortcode)
+                    
+                    # যদি এটি ভিডিও হয়, তবে ডাউনলোড করুন
+                    if post.is_video:
+                        L.download_post(post, temp_dir)
+                        
+                        # ডাউনলোড হওয়ার পর ভিডিও ফাইলটি খুঁজে বের করা
+                        video_file_name = None
+                        for filename in os.listdir(temp_dir):
+                            if filename.endswith(".mp4"):
+                                video_file_name = filename
+                                break
+                        
+                        if video_file_name:
+                            video_path = os.path.join(temp_dir, video_file_name)
+                            # ডাউনলোডের জন্য লিঙ্ক তৈরি করা
+                            download_link = f"/download/{post_shortcode}/{video_file_name}"
+                        else:
+                            error_message = "Video file not found after download."
 
-@app.route('/download/<path:filename>')
-def download_file(filename):
-    file_path = os.path.join(DOWNLOAD_FOLDER, filename)
+                    else:
+                        error_message = "The provided URL is not a video post (Reel/Video). It might be an image."
+                        
+                    
+                except Exception as e:
+                    error_message = f"Download failed: {str(e)}. Instagram's protection might be active."
+                
+            except Exception as e:
+                error_message = f"Error processing URL: {str(e)}"
+        else:
+            error_message = "Please enter an Instagram URL."
+
+    # ডাউনলোড লিঙ্ক সহ প্রধান টেমপ্লেট রেন্ডার করা
+    return render_template('index.html', download_link=download_link, error=error_message, app_name="Cx Instagram video Downloader")
+
+@app.route('/download/<shortcode>/<filename>', methods=['GET'])
+def serve_video(shortcode, filename):
+    file_path = os.path.join(DOWNLOAD_DIR, shortcode, filename)
+    
     if os.path.exists(file_path):
-        return send_file(file_path, as_attachment=True)
-    else:
-        return "File not found or expired", 404
+        # ফাইলটি পরিবেশন (serve) করা এবং তারপর ডিরেক্টরি মুছে ফেলা
+        try:
+            return send_file(file_path, as_attachment=True, download_name=filename)
+        finally:
+            # একবার ফাইল সার্ভ করার পর, টেম্পোরারি ডিরেক্টরিটি মুছে ফেলুন
+            try:
+                shutil.rmtree(os.path.join(DOWNLOAD_DIR, shortcode))
+            except Exception as e:
+                print(f"Error removing directory: {e}")
+    
+    return "File not found", 404
+
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # '0.0.0.0' হোস্ট করলে এটি যেকোনো আইপি অ্যাড্রেস থেকে অ্যাক্সেস করা যাবে (হোস্টিং এর জন্য প্রয়োজনীয়)
+    app.run(debug=True, host='0.0.0.0', port=os.environ.get('PORT', 5000))
